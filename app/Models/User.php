@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
 
@@ -83,21 +85,23 @@ class User extends Authenticatable
        Model Events
     ======================= */
 
-    protected static function booted(): void
+        protected static function booted(): void
+{
+    static::creating(function ($employee) {
+        if (empty($employee->employee_id)) {
+            // Get the highest database ID (e.g. 5) and add 1
+            $nextNumber = (static::max('id') ?? 0) + 1;
+
+            // Generate the string: EMP-000006
+            $employee->employee_id = 'EMP-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        }
+    });
+}
+
+public function canAccessPanel(Panel $panel): bool
     {
-        static::creating(function ($employee) {
-            if (empty($employee->employee_id)) {
-                $lastEmployee = static::orderByDesc('id')->first();
-                $nextNumber = 1;
-
-                if ($lastEmployee && $lastEmployee->employee_id) {
-                    if (preg_match('/^EMP-(\d+)$/', $lastEmployee->employee_id, $matches)) {
-                        $nextNumber = ((int) $matches[1]) + 1;
-                    }
-                }
-
-                $employee->employee_id = 'EMP-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-            }
-        });
+        return true; 
     }
+
+
 }

@@ -1,0 +1,43 @@
+services:
+  hrms_app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        user: hrms_user
+        uid: 1000
+    container_name: hrms_app
+    volumes:
+      - ./:/var/www
+    networks:
+      - hrms_net
+
+  hrms_webserver:
+    image: nginx:alpine
+    container_name: hrms_webserver_container
+    ports:
+      - "6162:80"
+    volumes:
+      - ./:/var/www
+      - ./hrms.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - hrms_net
+
+  # ADD THIS SECTION:
+  hrms_db:
+    image: mysql:8.0
+    container_name: hrms_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: hrms_db
+      MYSQL_USER: sail
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3306:3306"
+    networks:
+      - hrms_net
+
+networks:
+  hrms_net:
+    driver: bridge
